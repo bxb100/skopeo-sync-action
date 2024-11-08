@@ -44,37 +44,37 @@ export async function copy(
   }
   const syncs: Sync[] = gen_ready_to_sync_image_pair(source_images, dest_image)
   // https://github.com/containers/skopeo/blob/main/docs/skopeo-copy.1.md
-  core.summary.addHeading('Sync Summary:')
+  core.summary.addHeading('Sync Summary:', 2)
   for (let i = 0; i < syncs.length; i++) {
     const sync = syncs[i]
     let err = ''
     let out = ''
     const exit_code = await exec(
       'skopeo',
-      ['copy', '--multi-arch', 'all', sync.source_image, sync.dest_image],
+      // --multi-arch not support under 1.8.0
+      // https://github.com/containers/skopeo/commit/4ef35a385af074c979c9f8c4e2e37c38b0963c3a
+      ['copy', '--all', sync.source_image, sync.dest_image],
       {
         listeners: {
-          stderr: (data: Buffer) => {
-            err += data.toString()
+          errline: (data: string) => {
+            err += data + '\n'
           },
-          stdout: (data: Buffer) => {
-            out += data.toString()
+          stdline: (data: string) => {
+            out += data + '\n'
           }
         }
       }
     )
     core.summary.addRaw(
-      `process ${i}/${syncs.length}]: sync ${sync.source_image} to ${sync.dest_image}`,
+      `process [${i + 1}/${syncs.length}]: sync ${sync.source_image} to ${sync.dest_image}`,
       true
     )
     if (err) {
       core.summary.addDetails(':x:', err)
-      core.summary.addSeparator()
     } else if (out) {
       core.summary.addDetails(':white_check_mark:', out)
-      core.summary.addSeparator()
     }
-
+    await core.summary.write()
     if (!skip_error && exit_code != 0) {
       throw new Error(
         `sync ${sync.source_image} to ${sync.dest_image} failed: ${err}`

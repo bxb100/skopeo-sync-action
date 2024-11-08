@@ -29991,43 +29991,17 @@ exports.NEVER = parseUtil_1.INVALID;
 /***/ }),
 
 /***/ 7594:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.login = login;
 const exec_1 = __nccwpck_require__(5236);
 const utils_1 = __nccwpck_require__(1798);
-const core = __importStar(__nccwpck_require__(7484));
 async function login(registry, auth) {
     const username = (0, utils_1.inject_env)(auth.username);
     const password = (0, utils_1.inject_env)(auth.password);
-    core.setSecret(username);
-    core.setSecret(password);
     // https://github.com/containers/skopeo/blob/main/docs/skopeo-login.1.md
     const exist_code = await (0, exec_1.exec)('skopeo', [
         'login',
@@ -30116,30 +30090,32 @@ async function copy(source_image, dest_image, skip_error) {
     }
     const syncs = gen_ready_to_sync_image_pair(source_images, dest_image);
     // https://github.com/containers/skopeo/blob/main/docs/skopeo-copy.1.md
-    core.summary.addHeading('Sync Summary:');
+    core.summary.addHeading('Sync Summary:', 2);
     for (let i = 0; i < syncs.length; i++) {
         const sync = syncs[i];
         let err = '';
         let out = '';
-        const exit_code = await (0, exec_1.exec)('skopeo', ['copy', '--multi-arch', 'all', sync.source_image, sync.dest_image], {
+        const exit_code = await (0, exec_1.exec)('skopeo', 
+        // --multi-arch not support under 1.8.0
+        // https://github.com/containers/skopeo/commit/4ef35a385af074c979c9f8c4e2e37c38b0963c3a
+        ['copy', '--all', sync.source_image, sync.dest_image], {
             listeners: {
-                stderr: (data) => {
-                    err += data.toString();
+                errline: (data) => {
+                    err += data + '\n';
                 },
-                stdout: (data) => {
-                    out += data.toString();
+                stdline: (data) => {
+                    out += data + '\n';
                 }
             }
         });
-        core.summary.addRaw(`process ${i}/${syncs.length}]: sync ${sync.source_image} to ${sync.dest_image}`, true);
+        core.summary.addRaw(`process [${i + 1}/${syncs.length}]: sync ${sync.source_image} to ${sync.dest_image}`, true);
         if (err) {
             core.summary.addDetails(':x:', err);
-            core.summary.addSeparator();
         }
         else if (out) {
             core.summary.addDetails(':white_check_mark:', out);
-            core.summary.addSeparator();
         }
+        await core.summary.write();
         if (!skip_error && exit_code != 0) {
             throw new Error(`sync ${sync.source_image} to ${sync.dest_image} failed: ${err}`);
         }
@@ -30224,6 +30200,52 @@ exports.SkopeoListTagsResSchema = zod_1.z.object({
 
 /***/ }),
 
+/***/ 8794:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.print_skopeo_version = print_skopeo_version;
+const exec_1 = __nccwpck_require__(5236);
+const core = __importStar(__nccwpck_require__(7484));
+async function print_skopeo_version() {
+    await (0, exec_1.exec)('skopeo', ['--version'], {
+        silent: true,
+        listeners: {
+            stdline: data => {
+                core.info(data);
+            }
+        }
+    });
+}
+
+
+/***/ }),
+
 /***/ 1730:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -30259,11 +30281,13 @@ const utils_1 = __nccwpck_require__(1798);
 const types_1 = __nccwpck_require__(2143);
 const auth_1 = __nccwpck_require__(7594);
 const image_1 = __nccwpck_require__(8407);
+const version_1 = __nccwpck_require__(8794);
 async function run() {
     try {
         const auth_file = core.getInput('auth_file');
         const images_file = core.getInput('images_file');
         const skip_error = core.getBooleanInput('skip_error');
+        await (0, version_1.print_skopeo_version)();
         const auths = (0, utils_1.parse_yaml)(auth_file, types_1.AuthMapSchema);
         for (const registry in auths) {
             const login_status = await (0, auth_1.login)(registry, auths[registry]);
@@ -30276,7 +30300,7 @@ async function run() {
         }
     }
     catch (e) {
-        core.error(e);
+        core.setFailed(e);
     }
 }
 
