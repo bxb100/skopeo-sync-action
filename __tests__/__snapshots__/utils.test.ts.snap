@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`utils parse auth yaml 1`] = `
+{
+  "ghcr.io": {
+    "password": "\${GITHUB_P}",
+    "username": "\${GITHUB_U}",
+  },
+  "registry.cn-hangzhou.aliyuncs.com": {
+    "password": "\${ALI_P}",
+    "username": "\${ALI_U}",
+  },
+  "swr.cn-north-4.myhuaweicloud.com": {
+    "password": "\${HUAWEI_P}",
+    "username": "\${HUAWEI_U}",
+  },
+}
+`;
+
+exports[`utils parse image yaml 1`] = `
+{
+  "ghcr.io/advplyr/audiobookshelf:latest": [
+    "registry.cn-hangzhou.aliyuncs.com/bxb100/audiobookshelf:latest",
+    "swr.cn-north-4.myhuaweicloud.com/bxb100/advplyr/audiobookshelf",
+  ],
+  "nginx:latest": [
+    "swr.cn-north-4.myhuaweicloud.com/bxb100/nginx:latest",
+  ],
+}
+`;

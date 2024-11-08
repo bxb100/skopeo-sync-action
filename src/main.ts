@@ -1,26 +1,27 @@
 import * as core from '@actions/core'
-import { wait } from './wait'
+import { parse_yaml } from './utils'
+import { AuthMapSchema, ImageSyncMapSchema } from './config/types'
+import { login } from './config/auth'
+import { copy } from './config/image'
 
-/**
- * The main function for the action.
- * @returns {Promise<void>} Resolves when the action is complete.
- */
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    const auth_file = core.getInput('auth_file')
+    const images_file = core.getInput('images_file')
+    const skip_error = core.getBooleanInput('skip_error')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    const auths = parse_yaml(auth_file, AuthMapSchema)
+    for (const registry in auths) {
+      const login_status = await login(registry, auths[registry])
+      core.info(`Login ${registry} ${login_status ? 'Success' : 'Failed'}`)
+    }
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
-  } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    const image_sync_map = parse_yaml(images_file, ImageSyncMapSchema)
+    for (const source_img in image_sync_map) {
+      const dest_images = image_sync_map[source_img] as string[]
+      await copy(source_img, dest_images, skip_error)
+    }
+  } catch (e) {
+    core.error(e as Error)
   }
 }

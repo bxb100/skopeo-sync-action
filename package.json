@@ -67,7 +67,10 @@
     ]
   },
   "dependencies": {
-    "@actions/core": "^1.11.1"
+    "@actions/core": "^1.11.1",
+    "@actions/exec": "^1.1.1",
+    "yaml": "^2.6.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@github/local-action": "^2.1.3",

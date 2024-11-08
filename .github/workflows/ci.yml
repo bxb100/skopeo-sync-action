@@ -53,11 +53,25 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
+      - name: Inject secrets from 1Password
+        uses: bxb100/load-secrets-action@v0
+        with:
+          export-env: 'true'
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          HUAWEI_U: 'op://dev/g4v53qv5sgvxjr5o36yv4z4j7a/mxvviiefy4eovsqjnjxp26nhpy/username'
+          HUAWEI_P: 'op://dev/g4v53qv5sgvxjr5o36yv4z4j7a/mxvviiefy4eovsqjnjxp26nhpy/password'
+          ALI_U: 'op://dev/hrtvlsndxhu47tnokn3kwaiqki/username'
+          ALI_P: 'op://dev/hrtvlsndxhu47tnokn3kwaiqki/credential'
+          GITHUB_U: 'op://dev/kxty2ca7vd4rm3grjli6z6cs2i/username'
+          GITHUB_P: 'op://dev/kxty2ca7vd4rm3grjli6z6cs2i/credential'
+
       - name: Test Local Action
         id: test-action
         uses: ./
         with:
-          milliseconds: 2000
+          auth_file: ./test/auth.yml
+          images_file: ./test/images.yml
 
       - name: Print Output
         id: output
