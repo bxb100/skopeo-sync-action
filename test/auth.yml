@@ -1,0 +1,9 @@
+swr.cn-north-4.myhuaweicloud.com:
+  username: ${HUAWEI_U}
+  password: ${HUAWEI_P}
+registry.cn-hangzhou.aliyuncs.com:
+  username: ${ALI_U}
+  password: ${ALI_P}
+ghcr.io:
+  username: ${GITHUB_U}
+  password: ${GITHUB_P}
