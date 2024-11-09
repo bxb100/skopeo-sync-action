@@ -30116,10 +30116,10 @@ async function copy(source_image, dest_image, skip_error) {
         });
         core.summary.addRaw(`process [${i + 1}/${syncs.length}]: ${sync.fmt()}`, true);
         if (err_line.length > 0) {
-            core.summary.addDetails(':x:', err_line.join('\n'));
+            core.summary.addDetails(':x:', '\n'.repeat(2) + err_line.join('\n'));
         }
         else if (out_line.length > 0) {
-            core.summary.addDetails(':white_check_mark:', out_line.join('\n'));
+            core.summary.addDetails(':white_check_mark:', '\n'.repeat(2) + out_line.join('\n'));
         }
         await core.summary.write();
         if (!skip_error && exit_code != 0) {
