@@ -1,6 +1,6 @@
 import { inject_env, parse_yaml } from '../src/utils'
 import { expect } from '@jest/globals'
-import { AuthMapSchema, ImageSyncMapSchema } from '../src/config/types'
+import { AuthMapSchema, ImageSyncMapSchema } from '../src/skopeo/types'
 
 describe('utils', () => {
   it('parse auth yaml', () => {

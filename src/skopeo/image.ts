@@ -9,7 +9,6 @@ import { exec } from '@actions/exec'
 import { z } from 'zod'
 import * as core from '@actions/core'
 import { satisfies } from 'semver'
-import assert from 'node:assert'
 
 /**
  * https://docs.docker.com/reference/cli/docker/image/pull/
@@ -77,12 +76,12 @@ export async function pair(
 
   console.log(sync_info)
 
-  const source_images = await gen_need_sync_source_images(sync_info)
-  console.log(source_images)
+  const source_images = await gen_need_sync_source_images(sync_info, dest_image)
+  core.info(`source images: ${JSON.stringify(source_images)}`)
   if (source_images === undefined) {
     throw new Error(`Image ${k} not found`)
   }
-  return cartesian_source_dest_sync_pair(source_images, dest_image)
+  return source_images
 }
 
 export async function copy(syncs: Sync[], skip_error: boolean): Promise<void> {
@@ -159,40 +158,37 @@ export async function list_tag(
 }
 
 export async function gen_need_sync_source_images(
-  sync_info: ImageSyncInfo
-): Promise<string[] | undefined> {
+  sync_info: ImageSyncInfo,
+  dest_images: string[]
+): Promise<Sync[] | undefined> {
   if (sync_info.type === SyncType.Tag) {
-    return sync_info.tag?.map(t => `${sync_info.image}:${t}`)
+    return sync_info.tag
+      ?.map(t => `${sync_info.image}:${t}`)
+      .flatMap(s => dest_images.map(d => new Sync(s, d)))
   }
+
   if (sync_info.type === SyncType.Digest) {
-    return [`${sync_info.image}@${sync_info.digest}`]
+    return dest_images.map(
+      d => new Sync(`${sync_info.image}@${sync_info.digest}`, d)
+    )
   }
 
   const tag = await list_tag(sync_info.image)
 
-  if (sync_info.type === SyncType.All) {
-    return tag.Tags.map(t => `${sync_info.image}:${t}`)
-  }
-
-  if (sync_info.type === SyncType.Semver) {
-    assert(sync_info.semver, 'Semver must be set')
-    return tag.Tags.filter(t =>
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      satisfies(t, sync_info.semver!)
-    ).map(t => `${sync_info.image}:${t}`)
-  }
-
-  return tag.Tags.filter(t => sync_info.regex?.test(t)).map(
-    t => `${sync_info.image}:${t}`
-  )
-}
-
-export function cartesian_source_dest_sync_pair(
-  source_images: string[],
-  dest_images: string[]
-): Sync[] {
-  return source_images.reduce((acc, cur) => {
-    const data = dest_images.map(d => new Sync(cur, d))
-    return [...acc, ...data]
-  }, [] as Sync[])
+  return dest_images.flatMap(dest => {
+    switch (sync_info.type) {
+      case SyncType.All:
+        return tag.Tags.map(t => new Sync(sync_info.image, dest, t))
+      case SyncType.Semver:
+        return tag.Tags.filter(t =>
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          satisfies(t, sync_info.semver!)
+        ).map(t => new Sync(sync_info.image, dest, t))
+      case SyncType.Regex:
+        return tag.Tags.filter(t => sync_info.regex?.test(t)).map(
+          t => new Sync(sync_info.image, dest, t)
+        )
+    }
+    throw new Error(`Unknown error ${sync_info.type}`)
+  })
 }

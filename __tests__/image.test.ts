@@ -1,7 +1,7 @@
 import { parseDocument } from 'yaml'
 import { expect } from '@jest/globals'
-import { sync_type } from '../src/config/image'
-import { ImageSyncMapSchema, SyncType } from '../src/config/types'
+import { sync_type } from '../src/skopeo/image'
+import { ImageSyncMapSchema, SyncType } from '../src/skopeo/types'
 import { coerce, satisfies, valid } from 'semver'
 
 describe('Image', () => {

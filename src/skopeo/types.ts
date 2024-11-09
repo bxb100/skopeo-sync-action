@@ -61,11 +61,15 @@ export class Sync {
   private readonly ori_s: string
   private readonly ori_d: string
 
-  constructor(source_image: string, dest_image: string) {
+  constructor(source_image: string, dest_image: string, refer?: string) {
     this.ori_s = source_image
     this.ori_d = dest_image
     this.source_image = `docker://${source_image}`
     this.dest_image = `docker://${dest_image}`
+    if (refer) {
+      this.source_image += `:${refer}`
+      this.dest_image += `:${refer}`
+    }
   }
 
   fmt(): string {

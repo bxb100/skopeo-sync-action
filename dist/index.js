@@ -32539,34 +32539,7 @@ exports.NEVER = parseUtil_1.INVALID;
 
 /***/ }),
 
-/***/ 7594:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.login = login;
-const exec_1 = __nccwpck_require__(5236);
-const utils_1 = __nccwpck_require__(1798);
-async function login(registry, auth) {
-    const username = (0, utils_1.inject_env)(auth.username);
-    const password = (0, utils_1.inject_env)(auth.password);
-    // https://github.com/containers/skopeo/blob/main/docs/skopeo-login.1.md
-    const exist_code = await (0, exec_1.exec)('skopeo', [
-        'login',
-        '-u',
-        username,
-        '-p',
-        password,
-        registry
-    ]);
-    return exist_code === 0;
-}
-
-
-/***/ }),
-
-/***/ 8407:
+/***/ 1730:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -32594,8 +32567,93 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.run = run;
+const core = __importStar(__nccwpck_require__(7484));
+const utils_1 = __nccwpck_require__(1798);
+const types_1 = __nccwpck_require__(9092);
+const auth_1 = __nccwpck_require__(971);
+const image_1 = __nccwpck_require__(664);
+const version_1 = __nccwpck_require__(3833);
+async function run() {
+    try {
+        const auth_file = core.getInput('auth_file');
+        const images_file = core.getInput('images_file');
+        const skip_error = core.getBooleanInput('skip_error');
+        await (0, version_1.print_skopeo_version)();
+        const auths = (0, utils_1.parse_yaml)(auth_file, types_1.AuthMapSchema);
+        for (const registry in auths) {
+            const login_status = await (0, auth_1.login)(registry, auths[registry]);
+            core.info(`Login ${registry} ${login_status ? 'Success' : 'Failed'}`);
+        }
+        const image_sync_map = (0, utils_1.parse_yaml)(images_file, types_1.ImageSyncMapSchema);
+        for (const source_img in image_sync_map) {
+            const syncs = await (0, image_1.pair)(source_img, image_sync_map[source_img]);
+            await (0, image_1.copy)(syncs, skip_error);
+        }
+    }
+    catch (e) {
+        core.setFailed(e);
+    }
+}
+
+
+/***/ }),
+
+/***/ 971:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.login = login;
+const exec_1 = __nccwpck_require__(5236);
+const utils_1 = __nccwpck_require__(1798);
+async function login(registry, auth) {
+    const username = (0, utils_1.inject_env)(auth.username);
+    const password = (0, utils_1.inject_env)(auth.password);
+    // https://github.com/containers/skopeo/blob/main/docs/skopeo-login.1.md
+    const exist_code = await (0, exec_1.exec)('skopeo', [
+        'login',
+        '-u',
+        username,
+        '-p',
+        password,
+        registry
+    ]);
+    return exist_code === 0;
+}
+
+
+/***/ }),
+
+/***/ 664:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.sync_type = sync_type;
@@ -32603,12 +32661,10 @@ exports.pair = pair;
 exports.copy = copy;
 exports.list_tag = list_tag;
 exports.gen_need_sync_source_images = gen_need_sync_source_images;
-exports.cartesian_source_dest_sync_pair = cartesian_source_dest_sync_pair;
-const types_1 = __nccwpck_require__(2143);
+const types_1 = __nccwpck_require__(9092);
 const exec_1 = __nccwpck_require__(5236);
 const core = __importStar(__nccwpck_require__(7484));
 const semver_1 = __nccwpck_require__(2088);
-const node_assert_1 = __importDefault(__nccwpck_require__(4589));
 /**
  * https://docs.docker.com/reference/cli/docker/image/pull/
  *
@@ -32671,12 +32727,12 @@ async function pair(k, v) {
         dest_image = v;
     }
     console.log(sync_info);
-    const source_images = await gen_need_sync_source_images(sync_info);
-    console.log(source_images);
+    const source_images = await gen_need_sync_source_images(sync_info, dest_image);
+    core.info(`source images: ${JSON.stringify(source_images)}`);
     if (source_images === undefined) {
         throw new Error(`Image ${k} not found`);
     }
-    return cartesian_source_dest_sync_pair(source_images, dest_image);
+    return source_images;
 }
 async function copy(syncs, skip_error) {
     core.summary.addHeading('Sync Summary:', 2);
@@ -32731,36 +32787,35 @@ async function list_tag(source_image_name) {
     }
     return types_1.SkopeoListTagsResSchema.parse(JSON.parse(res));
 }
-async function gen_need_sync_source_images(sync_info) {
+async function gen_need_sync_source_images(sync_info, dest_images) {
     if (sync_info.type === types_1.SyncType.Tag) {
-        return sync_info.tag?.map(t => `${sync_info.image}:${t}`);
+        return sync_info.tag
+            ?.map(t => `${sync_info.image}:${t}`)
+            .flatMap(s => dest_images.map(d => new types_1.Sync(s, d)));
     }
     if (sync_info.type === types_1.SyncType.Digest) {
-        return [`${sync_info.image}@${sync_info.digest}`];
+        return dest_images.map(d => new types_1.Sync(`${sync_info.image}@${sync_info.digest}`, d));
     }
     const tag = await list_tag(sync_info.image);
-    if (sync_info.type === types_1.SyncType.All) {
-        return tag.Tags.map(t => `${sync_info.image}:${t}`);
-    }
-    if (sync_info.type === types_1.SyncType.Semver) {
-        (0, node_assert_1.default)(sync_info.semver, 'Semver must be set');
-        return tag.Tags.filter(t => 
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (0, semver_1.satisfies)(t, sync_info.semver)).map(t => `${sync_info.image}:${t}`);
-    }
-    return tag.Tags.filter(t => sync_info.regex?.test(t)).map(t => `${sync_info.image}:${t}`);
-}
-function cartesian_source_dest_sync_pair(source_images, dest_images) {
-    return source_images.reduce((acc, cur) => {
-        const data = dest_images.map(d => new types_1.Sync(cur, d));
-        return [...acc, ...data];
-    }, []);
+    return dest_images.flatMap(dest => {
+        switch (sync_info.type) {
+            case types_1.SyncType.All:
+                return tag.Tags.map(t => new types_1.Sync(sync_info.image, dest, t));
+            case types_1.SyncType.Semver:
+                return tag.Tags.filter(t => 
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                (0, semver_1.satisfies)(t, sync_info.semver)).map(t => new types_1.Sync(sync_info.image, dest, t));
+            case types_1.SyncType.Regex:
+                return tag.Tags.filter(t => sync_info.regex?.test(t)).map(t => new types_1.Sync(sync_info.image, dest, t));
+        }
+        throw new Error(`Unknown error ${sync_info.type}`);
+    });
 }
 
 
 /***/ }),
 
-/***/ 2143:
+/***/ 9092:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -32811,11 +32866,15 @@ class Sync {
     dest_image;
     ori_s;
     ori_d;
-    constructor(source_image, dest_image) {
+    constructor(source_image, dest_image, refer) {
         this.ori_s = source_image;
         this.ori_d = dest_image;
         this.source_image = `docker://${source_image}`;
         this.dest_image = `docker://${dest_image}`;
+        if (refer) {
+            this.source_image += `:${refer}`;
+            this.dest_image += `:${refer}`;
+        }
     }
     fmt() {
         const d = this.ori_d.split('/')[0];
@@ -32827,7 +32886,7 @@ exports.Sync = Sync;
 
 /***/ }),
 
-/***/ 8794:
+/***/ 3833:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -32837,67 +32896,6 @@ exports.print_skopeo_version = print_skopeo_version;
 const exec_1 = __nccwpck_require__(5236);
 async function print_skopeo_version() {
     await (0, exec_1.exec)('skopeo', ['--version']);
-}
-
-
-/***/ }),
-
-/***/ 1730:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.run = run;
-const core = __importStar(__nccwpck_require__(7484));
-const utils_1 = __nccwpck_require__(1798);
-const types_1 = __nccwpck_require__(2143);
-const auth_1 = __nccwpck_require__(7594);
-const image_1 = __nccwpck_require__(8407);
-const version_1 = __nccwpck_require__(8794);
-async function run() {
-    try {
-        const auth_file = core.getInput('auth_file');
-        const images_file = core.getInput('images_file');
-        const skip_error = core.getBooleanInput('skip_error');
-        await (0, version_1.print_skopeo_version)();
-        const auths = (0, utils_1.parse_yaml)(auth_file, types_1.AuthMapSchema);
-        for (const registry in auths) {
-            const login_status = await (0, auth_1.login)(registry, auths[registry]);
-            core.info(`Login ${registry} ${login_status ? 'Success' : 'Failed'}`);
-        }
-        const image_sync_map = (0, utils_1.parse_yaml)(images_file, types_1.ImageSyncMapSchema);
-        for (const source_img in image_sync_map) {
-            const syncs = await (0, image_1.pair)(source_img, image_sync_map[source_img]);
-            await (0, image_1.copy)(syncs, skip_error);
-        }
-    }
-    catch (e) {
-        core.setFailed(e);
-    }
 }
 
 
@@ -33066,14 +33064,6 @@ module.exports = require("https");
 
 "use strict";
 module.exports = require("net");
-
-/***/ }),
-
-/***/ 4589:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("node:assert");
 
 /***/ }),
 

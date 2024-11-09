@@ -1,9 +1,9 @@
 import * as core from '@actions/core'
 import { parse_yaml } from './utils'
-import { AuthMapSchema, ImageSyncMapSchema } from './config/types'
-import { login } from './config/auth'
-import { copy, pair } from './config/image'
-import { print_skopeo_version } from './config/version'
+import { AuthMapSchema, ImageSyncMapSchema } from './skopeo/types'
+import { login } from './skopeo/auth'
+import { copy, pair } from './skopeo/image'
+import { print_skopeo_version } from './skopeo/version'
 
 export async function run(): Promise<void> {
   try {
