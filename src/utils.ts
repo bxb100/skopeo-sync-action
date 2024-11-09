@@ -9,6 +9,11 @@ export function parse_yaml<T>(file_path: string, schema: ZodType<T>): T {
   return schema.parse(doc.toJS())
 }
 
+/**
+ * Simply inject env to template string, support `${ENV_NAME}`, `$ENV_NAME`
+ *
+ * @param template string
+ */
 export function inject_env(template: string): string {
   const envs = process.env
   const env_map = new Map<string, string | undefined>()

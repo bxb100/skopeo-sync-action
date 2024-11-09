@@ -30050,17 +30050,26 @@ exports.sync_type = sync_type;
 exports.copy = copy;
 exports.list_tag = list_tag;
 exports.gen_need_sync_source_images = gen_need_sync_source_images;
-exports.gen_ready_to_sync_image_pair = gen_ready_to_sync_image_pair;
+exports.cartesian_source_dest_sync_pair = cartesian_source_dest_sync_pair;
 const types_1 = __nccwpck_require__(2143);
 const exec_1 = __nccwpck_require__(5236);
 const core = __importStar(__nccwpck_require__(7484));
+/**
+ * https://docs.docker.com/reference/cli/docker/image/pull/
+ *
+ * `NAME[:TAG|@DIGEST]`
+ *
+ * Addition support `NAME:/regex/`
+ *
+ * @param source_image eg. `nginx:latest`, `ghcr.io/advplyr/audiobookshelf:latest`
+ */
 function sync_type(source_image) {
     if (source_image.includes('@')) {
         const [image, digest] = source_image.split('@');
         return {
             type: types_1.SyncType.Digest,
             image,
-            tag: [digest]
+            digest
         };
     }
     const [image, tag] = source_image.split(':');
@@ -30088,44 +30097,45 @@ async function copy(source_image, dest_image, skip_error) {
     if (source_images === undefined) {
         throw new Error(`${source_image} not found`);
     }
-    const syncs = gen_ready_to_sync_image_pair(source_images, dest_image);
-    // https://github.com/containers/skopeo/blob/main/docs/skopeo-copy.1.md
+    const syncs = cartesian_source_dest_sync_pair(source_images, dest_image);
     core.summary.addHeading('Sync Summary:', 2);
     for (let i = 0; i < syncs.length; i++) {
         const sync = syncs[i];
-        let err = '';
-        let out = '';
+        const err_line = [];
+        const out_line = [];
+        // https://github.com/containers/skopeo/blob/main/docs/skopeo-copy.1.md
         const exit_code = await (0, exec_1.exec)('skopeo', 
         // --multi-arch not support under 1.8.0
         // https://github.com/containers/skopeo/commit/4ef35a385af074c979c9f8c4e2e37c38b0963c3a
+        // https://github.com/actions/runner-images ubuntu-latest(ubuntu-22.04) skopeo-1.4.1
         ['copy', '--all', sync.source_image, sync.dest_image], {
             listeners: {
-                errline: (data) => {
-                    err += data + '\n';
-                },
-                stdline: (data) => {
-                    out += data + '\n';
-                }
+                errline: (data) => err_line.push(data),
+                stdline: (data) => out_line.push(data)
             }
         });
-        core.summary.addRaw(`process [${i + 1}/${syncs.length}]: sync ${sync.source_image} to ${sync.dest_image}`, true);
-        if (err) {
-            core.summary.addDetails(':x:', err);
+        core.summary.addRaw(`process [${i + 1}/${syncs.length}]: ${sync.fmt()}`, true);
+        if (err_line.length > 0) {
+            core.summary.addDetails(':x:', err_line.join('\n'));
         }
-        else if (out) {
-            core.summary.addDetails(':white_check_mark:', out);
+        else if (out_line.length > 0) {
+            core.summary.addDetails(':white_check_mark:', out_line.join('\n'));
         }
         await core.summary.write();
         if (!skip_error && exit_code != 0) {
-            throw new Error(`sync ${sync.source_image} to ${sync.dest_image} failed: ${err}`);
+            throw new Error(`sync ${sync.source_image} to ${sync.dest_image} failed: ${err_line.join('\n')}`);
         }
     }
 }
-async function list_tag(source_image) {
-    // https://github.com/containers/skopeo/blob/main/docs/skopeo-list-tags.1.md
+/**
+ * https://github.com/containers/skopeo/blob/main/docs/skopeo-list-tags.1.md
+ *
+ * @param source_image_name eg. `docker.io/fedora`, `nginx`
+ */
+async function list_tag(source_image_name) {
     let res = '';
     let err = '';
-    const exit_code = await (0, exec_1.exec)('skopeo', ['list-tags', `docker://${source_image.image}`], {
+    const exit_code = await (0, exec_1.exec)('skopeo', ['list-tags', `docker://${source_image_name}`], {
         listeners: {
             stdout: (data) => {
                 res += data.toString();
@@ -30142,23 +30152,21 @@ async function list_tag(source_image) {
 }
 async function gen_need_sync_source_images(source_image) {
     const sync_info = sync_type(source_image);
-    switch (sync_info.type) {
-        case types_1.SyncType.Tag:
-        case types_1.SyncType.Digest:
-            return sync_info.tag?.map(t => `docker://${sync_info.image}:${t}`);
+    if (sync_info.type === types_1.SyncType.Tag) {
+        return sync_info.tag?.map(t => `${sync_info.image}:${t}`);
     }
-    const tag = await list_tag(sync_info);
+    if (sync_info.type === types_1.SyncType.Digest) {
+        return [`${sync_info.image}@${sync_info.digest}`];
+    }
+    const tag = await list_tag(sync_info.image);
     if (sync_info.type === types_1.SyncType.All) {
-        return tag.Tags.map(t => `docker://${sync_info.image}:${t}`);
+        return tag.Tags.map(t => `${sync_info.image}:${t}`);
     }
-    return tag.Tags.filter(t => sync_info.regex?.test(t)).map(t => `docker://${sync_info.image}:${t}`);
+    return tag.Tags.filter(t => sync_info.regex?.test(t)).map(t => `${sync_info.image}:${t}`);
 }
-function gen_ready_to_sync_image_pair(source_images, raw_dest_images) {
+function cartesian_source_dest_sync_pair(source_images, dest_images) {
     return source_images.reduce((acc, cur) => {
-        const data = raw_dest_images.map(d => ({
-            source_image: cur,
-            dest_image: `docker://${d}`
-        }));
+        const data = dest_images.map(d => new types_1.Sync(cur, d));
         return [...acc, ...data];
     }, []);
 }
@@ -30172,7 +30180,7 @@ function gen_ready_to_sync_image_pair(source_images, raw_dest_images) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SkopeoListTagsResSchema = exports.SyncType = exports.ImageSyncMapSchema = exports.AuthMapSchema = exports.AuthSchema = void 0;
+exports.Sync = exports.SkopeoListTagsResSchema = exports.SyncType = exports.ImageSyncMapSchema = exports.AuthMapSchema = exports.AuthSchema = void 0;
 const zod_1 = __nccwpck_require__(4809);
 exports.AuthSchema = zod_1.z.object({
     username: zod_1.z.string(),
@@ -30196,51 +30204,37 @@ exports.SkopeoListTagsResSchema = zod_1.z.object({
     Repository: zod_1.z.string(),
     Tags: zod_1.z.string().array()
 });
+class Sync {
+    source_image;
+    dest_image;
+    ori_s;
+    ori_d;
+    constructor(source_image, dest_image) {
+        this.ori_s = source_image;
+        this.ori_d = dest_image;
+        this.source_image = `docker://${source_image}`;
+        this.dest_image = `docker://${dest_image}`;
+    }
+    fmt() {
+        const d = this.ori_d.split('/')[0];
+        return `sync ${this.ori_s} to ${d}`;
+    }
+}
+exports.Sync = Sync;
 
 
 /***/ }),
 
 /***/ 8794:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.print_skopeo_version = print_skopeo_version;
 const exec_1 = __nccwpck_require__(5236);
-const core = __importStar(__nccwpck_require__(7484));
 async function print_skopeo_version() {
-    await (0, exec_1.exec)('skopeo', ['--version'], {
-        silent: true,
-        listeners: {
-            stdline: data => {
-                core.info(data);
-            }
-        }
-    });
+    await (0, exec_1.exec)('skopeo', ['--version']);
 }
 
 
@@ -30346,6 +30340,11 @@ function parse_yaml(file_path, schema) {
     const doc = (0, yaml_1.parseDocument)(file);
     return schema.parse(doc.toJS());
 }
+/**
+ * Simply inject env to template string, support `${ENV_NAME}`, `$ENV_NAME`
+ *
+ * @param template string
+ */
 function inject_env(template) {
     const envs = process.env;
     const env_map = new Map();
@@ -40849,6 +40848,7 @@ var __webpack_exports__ = {};
 "use strict";
 var exports = __webpack_exports__;
 
+// noinspection JSIgnoredPromiseFromCall
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const main_1 = __nccwpck_require__(1730);
 // eslint-disable-next-line @typescript-eslint/no-floating-promises

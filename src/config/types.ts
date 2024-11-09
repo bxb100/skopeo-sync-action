@@ -29,6 +29,7 @@ export type ImageSyncInfo = {
   image: string
   tag?: string[]
   regex?: RegExp
+  digest?: string
 }
 
 export const SkopeoListTagsResSchema = z.object({
@@ -36,7 +37,21 @@ export const SkopeoListTagsResSchema = z.object({
   Tags: z.string().array()
 })
 
-export type Sync = {
+export class Sync {
   source_image: string
   dest_image: string
+  private readonly ori_s: string
+  private readonly ori_d: string
+
+  constructor(source_image: string, dest_image: string) {
+    this.ori_s = source_image
+    this.ori_d = dest_image
+    this.source_image = `docker://${source_image}`
+    this.dest_image = `docker://${dest_image}`
+  }
+
+  fmt(): string {
+    const d = this.ori_d.split('/')[0]
+    return `sync ${this.ori_s} to ${d}`
+  }
 }

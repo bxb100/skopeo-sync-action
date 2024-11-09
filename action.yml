@@ -16,7 +16,7 @@ inputs:
     required: true
     default: './images.yml'
   skip_error:
-    description: 'If any error during copying of images, ignore'
+    description: 'If set true, any error during copying of images will ignored'
     required: true
     default: 'false'
 
