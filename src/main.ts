@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import { parse_yaml } from './utils'
 import { AuthMapSchema, ImageSyncMapSchema } from './config/types'
 import { login } from './config/auth'
-import { copy } from './config/image'
+import { copy, pair } from './config/image'
 import { print_skopeo_version } from './config/version'
 
 export async function run(): Promise<void> {
@@ -21,8 +21,8 @@ export async function run(): Promise<void> {
 
     const image_sync_map = parse_yaml(images_file, ImageSyncMapSchema)
     for (const source_img in image_sync_map) {
-      const dest_images = image_sync_map[source_img] as string[]
-      await copy(source_img, dest_images, skip_error)
+      const syncs = await pair(source_img, image_sync_map[source_img] as never)
+      await copy(syncs, skip_error)
     }
   } catch (e) {
     core.setFailed(e as Error)

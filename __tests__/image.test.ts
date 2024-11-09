@@ -2,6 +2,7 @@ import { parseDocument } from 'yaml'
 import { expect } from '@jest/globals'
 import { sync_type } from '../src/config/image'
 import { ImageSyncMapSchema, SyncType } from '../src/config/types'
+import { coerce, satisfies, valid } from 'semver'
 
 describe('Image', () => {
   it('parse yaml file', () => {
@@ -14,6 +15,14 @@ quay.io/coreos/kube-rbac-proxy:v1.1:
   - quay.io/ruohe/kube-rbac-proxy1
   - quay.io/ruohe/kube-rbac-proxy2
 quay.io/coreos/kube-rbac-proxy:/a+/: quay.io/ruohe/kube-rbac-proxy
+alpine:
+  semver: >= 3.12.0
+  dest:
+    - xxx
+nginx:
+  regex: ^1\\.13\\.[12]-alpine-perl$
+  dest:
+    - xxx
     `
     const doc = parseDocument(content)
     const res = ImageSyncMapSchema.parse(doc.toJS())
@@ -36,5 +45,10 @@ quay.io/coreos/kube-rbac-proxy:/a+/: quay.io/ruohe/kube-rbac-proxy
 
     image = 'quay.io/coreos/kube-rbac-proxy:/a+/'
     expect(sync_type(image).type).toEqual(SyncType.Regex)
+  })
+
+  it('valid semver', () => {
+    expect(valid(coerce('1.25-alpine3.17'))).toEqual('1.25.0')
+    expect(satisfies('1.2.3', '1.x || >=2.5.0 || 5.0.0 - 7.2.3')).toBeTruthy()
   })
 })

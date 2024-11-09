@@ -7,21 +7,38 @@ export const AuthSchema = z.object({
 
 export const AuthMapSchema = z.record(z.string(), AuthSchema)
 
-export const ImageSyncMapSchema = z.record(
-  z.string(),
-  z.union([z.string(), z.string().array()]).transform<string[]>(v => {
+const _DestSchema = z
+  .string()
+  .or(z.string().array())
+  .transform(v => {
     if (typeof v === 'string') {
       return [v]
     }
     return v
   })
-)
+
+export const ImageSyncSemverSchema = z.object({
+  semver: z.string().or(z.number().transform(String)),
+  dest: _DestSchema
+})
+
+export const ImageSyncRegexSchema = z.object({
+  regex: z.string(),
+  dest: _DestSchema
+})
+
+export const ImageSyncValSchema = _DestSchema
+  .or(ImageSyncSemverSchema)
+  .or(ImageSyncRegexSchema)
+
+export const ImageSyncMapSchema = z.record(z.string(), ImageSyncValSchema)
 
 export enum SyncType {
   All,
   Tag,
   Digest,
-  Regex
+  Regex,
+  Semver
 }
 
 export type ImageSyncInfo = {
@@ -30,6 +47,7 @@ export type ImageSyncInfo = {
   tag?: string[]
   regex?: RegExp
   digest?: string
+  semver?: string
 }
 
 export const SkopeoListTagsResSchema = z.object({

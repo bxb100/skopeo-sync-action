@@ -2,6 +2,18 @@
 
 exports[`Image parse yaml file 1`] = `
 {
+  "alpine": {
+    "dest": [
+      "xxx",
+    ],
+    "semver": "",
+  },
+  "nginx": {
+    "dest": [
+      "xxx",
+    ],
+    "regex": "^1\\.13\\.[12]-alpine-perl$",
+  },
   "quay.io/coreos/kube-rbac-proxy": [
     "quay.io/ruohe/kube-rbac-proxy",
   ],

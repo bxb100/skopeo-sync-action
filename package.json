@@ -1,7 +1,7 @@
 {
   "name": "typescript-action",
   "description": "GitHub Actions TypeScript template",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "",
   "private": true,
   "homepage": "https://github.com/actions/typescript-action",
@@ -69,6 +69,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/exec": "^1.1.1",
+    "semver": "^7.6.3",
     "yaml": "^2.6.0",
     "zod": "^3.23.8"
   },
@@ -77,6 +78,7 @@
     "@jest/globals": "^29.7.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.8.7",
+    "@types/semver": "^7.5.8",
     "@typescript-eslint/eslint-plugin": "^8.12.2",
     "@typescript-eslint/parser": "^8.12.2",
     "@vercel/ncc": "^0.38.2",

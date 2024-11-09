@@ -1,5 +1,11 @@
 ghcr.io/advplyr/audiobookshelf:latest:
   - registry.cn-hangzhou.aliyuncs.com/bxb100/audiobookshelf:latest
   - swr.cn-north-4.myhuaweicloud.com/bxb100/advplyr/audiobookshelf
-nginx:latest:
-  - swr.cn-north-4.myhuaweicloud.com/bxb100/nginx:latest
+nginx:
+  regex: '^1\.13\.[12]-alpine-perl$'
+  dest:
+    - swr.cn-north-4.myhuaweicloud.com/bxb100/nginx
+alpine:
+  semver: '>= 3.20'
+  dest:
+    - swr.cn-north-4.myhuaweicloud.com/bxb100/alpine

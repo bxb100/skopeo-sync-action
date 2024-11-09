@@ -1,7 +1,15 @@
-import { ImageSyncInfo, SkopeoListTagsResSchema, Sync, SyncType } from './types'
+import {
+  ImageSyncInfo,
+  ImageSyncValSchema,
+  SkopeoListTagsResSchema,
+  Sync,
+  SyncType
+} from './types'
 import { exec } from '@actions/exec'
 import { z } from 'zod'
 import * as core from '@actions/core'
+import { satisfies } from 'semver'
+import assert from 'node:assert'
 
 /**
  * https://docs.docker.com/reference/cli/docker/image/pull/
@@ -42,20 +50,42 @@ export function sync_type(source_image: string): ImageSyncInfo {
   }
 }
 
-export async function copy(
-  source_image: string,
-  dest_image: string[],
-  skip_error: boolean
-): Promise<void> {
-  const source_images = await gen_need_sync_source_images(source_image)
-  if (source_images === undefined) {
-    throw new Error(`${source_image} not found`)
+export async function pair(
+  k: string,
+  v: z.infer<typeof ImageSyncValSchema>
+): Promise<Sync[]> {
+  let sync_info: ImageSyncInfo
+  let dest_image: string[]
+  if ('semver' in v) {
+    sync_info = {
+      image: k,
+      type: SyncType.Semver,
+      semver: v.semver
+    }
+    dest_image = v.dest
+  } else if ('regex' in v) {
+    sync_info = {
+      image: k,
+      type: SyncType.Regex,
+      regex: new RegExp(v.regex)
+    }
+    dest_image = v.dest
+  } else {
+    sync_info = sync_type(k)
+    dest_image = v
   }
-  const syncs: Sync[] = cartesian_source_dest_sync_pair(
-    source_images,
-    dest_image
-  )
 
+  console.log(sync_info)
+
+  const source_images = await gen_need_sync_source_images(sync_info)
+  console.log(source_images)
+  if (source_images === undefined) {
+    throw new Error(`Image ${k} not found`)
+  }
+  return cartesian_source_dest_sync_pair(source_images, dest_image)
+}
+
+export async function copy(syncs: Sync[], skip_error: boolean): Promise<void> {
   core.summary.addHeading('Sync Summary:', 2)
   for (let i = 0; i < syncs.length; i++) {
     const sync = syncs[i]
@@ -125,14 +155,12 @@ export async function list_tag(
     throw new Error(`skopeo list-tags: ${err}`)
   }
 
-  return SkopeoListTagsResSchema.parse(res)
+  return SkopeoListTagsResSchema.parse(JSON.parse(res))
 }
 
 export async function gen_need_sync_source_images(
-  source_image: string
+  sync_info: ImageSyncInfo
 ): Promise<string[] | undefined> {
-  const sync_info = sync_type(source_image)
-
   if (sync_info.type === SyncType.Tag) {
     return sync_info.tag?.map(t => `${sync_info.image}:${t}`)
   }
@@ -141,9 +169,19 @@ export async function gen_need_sync_source_images(
   }
 
   const tag = await list_tag(sync_info.image)
+
   if (sync_info.type === SyncType.All) {
     return tag.Tags.map(t => `${sync_info.image}:${t}`)
   }
+
+  if (sync_info.type === SyncType.Semver) {
+    assert(sync_info.semver, 'Semver must be set')
+    return tag.Tags.filter(t =>
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      satisfies(t, sync_info.semver!)
+    ).map(t => `${sync_info.image}:${t}`)
+  }
+
   return tag.Tags.filter(t => sync_info.regex?.test(t)).map(
     t => `${sync_info.image}:${t}`
   )
