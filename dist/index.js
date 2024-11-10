@@ -32932,6 +32932,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.parse_yaml = parse_yaml;
 exports.inject_env = inject_env;
+exports.lexer = lexer;
 const fs = __importStar(__nccwpck_require__(3024));
 const yaml_1 = __nccwpck_require__(8815);
 const process = __importStar(__nccwpck_require__(1708));
@@ -32951,13 +32952,79 @@ function inject_env(template) {
     for (const k in envs) {
         env_map.set(k.toLowerCase(), envs[k]);
     }
-    return template
-        .replaceAll(/\${(.+?)}/g, (ori, variable) => {
-        return env_map.get(variable.toLowerCase()) || ori;
-    })
-        .replaceAll(/\$(\w+)/g, (ori, variable) => {
-        return env_map.get(variable.toLowerCase()) || ori;
+    const tokens = lexer(template);
+    const replace_map = new Map();
+    tokens.forEach(token => {
+        const v = env_map.get(token.k.toLowerCase());
+        if (v) {
+            replace_map.set(template.substring(token.start, token.end + 1), v);
+        }
     });
+    let res = template;
+    for (const [k, v] of replace_map) {
+        res = res.replace(k, v);
+    }
+    return res;
+}
+function lexer(str, strict = false) {
+    const res = [];
+    const keyword = '$';
+    const bracket_pre = ['[', '(', '{'];
+    const bracket_pos = [']', ')', '}'];
+    const chars = Array.from(str);
+    let c;
+    for (let i = 0; i < chars.length; i++) {
+        c = chars[i];
+        if (c === keyword) {
+            i++;
+            let around_len = 0;
+            let pre;
+            let pos;
+            for (let j = i; j < i + 2; j++) {
+                // todo: strict valid
+                if (bracket_pre.includes(chars[j])) {
+                    if (strict && pre === undefined) {
+                        pre = chars[j];
+                        pos = bracket_pos[bracket_pre.indexOf(pre)];
+                    }
+                    else if (strict && pre) {
+                        if (chars[j] != pre) {
+                            throw new Error(`Invalid bracket, pre: ${pre}, cur: ${chars[j]}`);
+                        }
+                    }
+                    around_len++;
+                }
+                else
+                    break;
+            }
+            const start = i + around_len;
+            let j = start;
+            while (chars.length > j && /[a-zA-Z0-9_-]/.test(chars[j])) {
+                j++;
+            }
+            if (j === start) {
+                // no valid alphanumeric ident
+                continue;
+            }
+            for (let k = j; k < j + around_len; k++) {
+                if (k >= chars.length || !bracket_pos.includes(chars[k])) {
+                    throw new Error('Not valid sentence');
+                }
+                if (strict && pos && pos !== chars[k]) {
+                    throw new Error(`Invalid correspond bracket, except: ${pos}, cur: ${chars[k]}`);
+                }
+            }
+            res.push({
+                start: start - around_len - 1,
+                end: j + around_len - 1,
+                pre_len: around_len,
+                k: str.substring(start, j)
+            });
+            // skip
+            i = j - 1;
+        }
+    }
+    return res;
 }
 
 

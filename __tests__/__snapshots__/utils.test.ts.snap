@@ -1,5 +1,136 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`utils lexer test 1`] = `[]`;
+
+exports[`utils lexer test 2`] = `[]`;
+
+exports[`utils lexer test 3`] = `
+[
+  {
+    "end": 22,
+    "k": "username",
+    "pre_len": 1,
+    "start": 12,
+  },
+]
+`;
+
+exports[`utils lexer test 4`] = `
+[
+  {
+    "end": 22,
+    "k": "username",
+    "pre_len": 1,
+    "start": 12,
+  },
+]
+`;
+
+exports[`utils lexer test 5`] = `
+[
+  {
+    "end": 10,
+    "k": "username",
+    "pre_len": 1,
+    "start": 0,
+  },
+]
+`;
+
+exports[`utils lexer test 6`] = `
+[
+  {
+    "end": 22,
+    "k": "username",
+    "pre_len": 1,
+    "start": 12,
+  },
+  {
+    "end": 44,
+    "k": "password",
+    "pre_len": 1,
+    "start": 34,
+  },
+]
+`;
+
+exports[`utils lexer test 7`] = `
+[
+  {
+    "end": 8,
+    "k": "username",
+    "pre_len": 0,
+    "start": 0,
+  },
+]
+`;
+
+exports[`utils lexer test 8`] = `[]`;
+
+exports[`utils lexer test 9`] = `[]`;
+
+exports[`utils lexer test 10`] = `
+[
+  {
+    "end": 7,
+    "k": "name",
+    "pre_len": 0,
+    "start": 3,
+  },
+  {
+    "end": 10,
+    "k": "pw",
+    "pre_len": 0,
+    "start": 8,
+  },
+]
+`;
+
+exports[`utils lexer test 11`] = `
+[
+  {
+    "end": 7,
+    "k": "name",
+    "pre_len": 0,
+    "start": 3,
+  },
+  {
+    "end": 11,
+    "k": "pw",
+    "pre_len": 0,
+    "start": 9,
+  },
+]
+`;
+
+exports[`utils lexer test 12`] = `
+[
+  {
+    "end": 7,
+    "k": "name",
+    "pre_len": 0,
+    "start": 3,
+  },
+  {
+    "end": 11,
+    "k": "pw",
+    "pre_len": 0,
+    "start": 9,
+  },
+]
+`;
+
+exports[`utils lexer test 13`] = `
+[
+  {
+    "end": 12,
+    "k": "username",
+    "pre_len": 2,
+    "start": 0,
+  },
+]
+`;
+
 exports[`utils parse auth yaml 1`] = `
 {
   "ghcr.io": {
