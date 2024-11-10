@@ -56,7 +56,7 @@ jobs:
       - name: Inject secrets from 1Password
         uses: bxb100/load-secrets-action@v0
         with:
-          export-env: 'true'
+          export_env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           HUAWEI_U: 'op://dev/g4v53qv5sgvxjr5o36yv4z4j7a/mxvviiefy4eovsqjnjxp26nhpy/username'

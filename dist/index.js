@@ -32981,7 +32981,6 @@ function lexer(str, strict = false) {
             let pre;
             let pos;
             for (let j = i; j < i + 2; j++) {
-                // todo: strict valid
                 if (bracket_pre.includes(chars[j])) {
                     if (strict && pre === undefined) {
                         pre = chars[j];
