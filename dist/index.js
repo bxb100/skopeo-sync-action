@@ -572,8 +572,8 @@ class OidcClient {
             const res = yield httpclient
                 .getJson(id_token_url)
                 .catch(error => {
-                throw new Error(`Failed to get ID Token. \n
-        Error Code : ${error.statusCode}\n
+                throw new Error(`Failed to get ID Token. \n 
+        Error Code : ${error.statusCode}\n 
         Error Message: ${error.message}`);
             });
             const id_token = (_a = res.result) === null || _a === void 0 ? void 0 : _a.value;
@@ -32368,7 +32368,7 @@ ZodReadonly.create = (type, params) => {
         ...processCreateParams(params),
     });
 };
-function custom(check, params = {},
+function custom(check, params = {}, 
 /**
  * @deprecated
  *
@@ -32741,7 +32741,7 @@ async function copy(syncs, skip_error) {
         const err_line = [];
         const out_line = [];
         // https://github.com/containers/skopeo/blob/main/docs/skopeo-copy.1.md
-        const exit_code = await (0, exec_1.exec)('skopeo',
+        const exit_code = await (0, exec_1.exec)('skopeo', 
         // --multi-arch not support under 1.8.0
         // https://github.com/containers/skopeo/commit/4ef35a385af074c979c9f8c4e2e37c38b0963c3a
         // https://github.com/actions/runner-images ubuntu-latest(ubuntu-22.04) skopeo-1.4.1
@@ -32804,7 +32804,7 @@ async function gen_need_sync_source_images(sync_info, dest_images) {
             case types_1.SyncType.All:
                 return tag.Tags.map(t => new types_1.Sync(sync_info.image, dest, t));
             case types_1.SyncType.Semver:
-                return tag.Tags.filter(t =>
+                return tag.Tags.filter(t => 
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 (0, semver_1.satisfies)(t, sync_info.semver)).map(t => new types_1.Sync(sync_info.image, dest, t));
             case types_1.SyncType.Regex:
@@ -36809,7 +36809,7 @@ class Document {
             replacer = undefined;
         }
         const { aliasDuplicateObjects, anchorPrefix, flow, keepUndefined, onTagObj, tag } = options ?? {};
-        const { onAnchor, setAnchors, sourceObjects } = anchors.createNodeAnchors(this,
+        const { onAnchor, setAnchors, sourceObjects } = anchors.createNodeAnchors(this, 
         // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         anchorPrefix || 'a');
         const ctx = {
@@ -43476,7 +43476,7 @@ exports.visitAsync = visitAsync;
 /************************************************************************/
 /******/ 	// The module cache
 /******/ 	var __webpack_module_cache__ = {};
-/******/
+/******/ 	
 /******/ 	// The require function
 /******/ 	function __nccwpck_require__(moduleId) {
 /******/ 		// Check if module is in cache
@@ -43490,7 +43490,7 @@ exports.visitAsync = visitAsync;
 /******/ 			// no module.loaded needed
 /******/ 			exports: {}
 /******/ 		};
-/******/
+/******/ 	
 /******/ 		// Execute the module function
 /******/ 		var threw = true;
 /******/ 		try {
@@ -43499,16 +43499,16 @@ exports.visitAsync = visitAsync;
 /******/ 		} finally {
 /******/ 			if(threw) delete __webpack_module_cache__[moduleId];
 /******/ 		}
-/******/
+/******/ 	
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-/******/
+/******/ 	
 /************************************************************************/
 /******/ 	/* webpack/runtime/compat */
-/******/
+/******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
-/******/
+/******/ 	
 /************************************************************************/
 var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be in strict mode.

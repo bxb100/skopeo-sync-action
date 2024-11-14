@@ -154,7 +154,7 @@ exports[`utils parse image yaml 1`] = `
     "dest": [
       "swr.cn-north-4.myhuaweicloud.com/bxb100/alpine",
     ],
-    "semver": ">= 3.20",
+    "semver": "~ 3.20",
   },
   "ghcr.io/advplyr/audiobookshelf:latest": [
     "registry.cn-hangzhou.aliyuncs.com/bxb100/audiobookshelf:latest",

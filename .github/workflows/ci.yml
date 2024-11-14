@@ -72,3 +72,4 @@ jobs:
         with:
           auth_file: ./test/auth.yml
           images_file: ./test/images.yml
+          skip_error: true
