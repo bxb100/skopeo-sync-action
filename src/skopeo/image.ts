@@ -101,7 +101,8 @@ export async function copy(syncs: Sync[], skip_error: boolean): Promise<void> {
         listeners: {
           errline: (data: string) => err_line.push(data),
           stdline: (data: string) => out_line.push(data)
-        }
+        },
+        ignoreReturnCode: true
       }
     )
     core.summary.addRaw(
@@ -146,7 +147,8 @@ export async function list_tag(
         stderr: (data: Buffer) => {
           err += data.toString()
         }
-      }
+      },
+      ignoreReturnCode: true
     }
   )
 
