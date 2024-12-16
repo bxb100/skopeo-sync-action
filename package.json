@@ -71,7 +71,7 @@
     "@actions/exec": "^1.1.1",
     "semver": "^7.6.3",
     "yaml": "^2.6.0",
-    "zod": "^3.23.8"
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@github/local-action": "^2.2.1",
